@@ -12,6 +12,7 @@ module Stack.Runners
   ( withBuildConfig
   , withEnvConfig
   , withDefaultEnvConfig
+  , withDebugEnvConfig
   , withConfig
   , withGlobalProject
   , withRunnerGlobal
@@ -31,7 +32,7 @@ import           Stack.DefaultColorWhen ( defaultColorWhen )
 import qualified Stack.Docker as Docker
 import qualified Stack.Nix as Nix
 import           Stack.Prelude
-import           Stack.Setup ( setupEnv )
+import           Stack.Setup ( setupEnv, withDebugsetupEnv )
 import           Stack.Storage.User ( logUpgradeCheck, upgradeChecksSince )
 import           Stack.Types.BuildOpts
                    ( BuildOptsCLI, defaultBuildOptsCLI )
@@ -107,6 +108,19 @@ withEnvConfig needTargets boptsCLI inner =
     envConfig <- setupEnv needTargets boptsCLI Nothing
     logDebug "Starting to execute command inside EnvConfig"
     runRIO envConfig inner
+
+withDebugEnvConfig ::
+     NeedTargets
+  -> BuildOptsCLI
+  -> RIO EnvConfig a
+  -- ^ Action that uses the build config.  If Docker is enabled for builds,
+  -- this will be run in a Docker container.
+  -> RIO Config a
+withDebugEnvConfig needTargets boptsCLI inner =
+  withBuildConfig $ do
+    envConfig <- withDebugsetupEnv needTargets boptsCLI Nothing
+    exitSuccess 
+
 
 -- | If the settings justify it, should we reexec inside Docker or Nix?
 data ShouldReexec

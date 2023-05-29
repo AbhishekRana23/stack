@@ -8,6 +8,7 @@
 
 module Stack.Setup
   ( setupEnv
+  , withDebugsetupEnv
   , ensureCompilerAndMsys
   , ensureDockerStackExe
   , SetupOpts (..)
@@ -42,16 +43,19 @@ import           Data.List.Split ( splitOn )
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Data.Text as T
+import qualified Text.Read as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy.Encoding as TL
 import qualified Data.Text.Encoding.Error as T
+import           Data.Version ( showVersion )
 import qualified Data.Yaml as Yaml
 import           Distribution.System ( Arch (..), OS, Platform (..) )
 import qualified Distribution.System as Cabal
+import           Control.Monad.Trans.Writer ( runWriter, tell )
 import           Distribution.Text ( simpleParse )
 import           Distribution.Types.PackageName ( mkPackageName )
-import           Distribution.Version ( mkVersion )
+import           Distribution.Version ( mkVersion, versionNumbers )
 import           Network.HTTP.Client ( redirectCount )
 import           Network.HTTP.StackClient
                    ( CheckHexDigest (..), HashCheck (..), getResponseBody
@@ -67,6 +71,7 @@ import           Path
                    ( (</>), addExtension, dirname, filename, parent, parseAbsDir
                    , parseAbsFile, parseRelDir, parseRelFile, toFilePath
                    )
+import           Prelude (head, tail)
 import           Path.CheckInstall ( warnInstallSearchPathIssues )
 import           Path.Extended ( fileExtension )
 import           Path.Extra ( toFilePathNoTrailingSep )
@@ -772,6 +777,21 @@ setupEnv needTargets boptsCLI mResolveMissingGHC = do
     , envConfigCompilerPaths = compilerPaths
     }
 
+parseMyVersion :: WantedCompiler -> String
+parseMyVersion wc = case wc of
+  WCGhc v -> concat (([show $ head $ versionNumbers v]) ++ (map (\x -> "." <> show x) (tail $ versionNumbers v)))
+  _ -> "latest"
+
+withDebugsetupEnv :: 
+     NeedTargets
+  -> BuildOptsCLI
+  -> Maybe Text -- ^ Message to give user when necessary GHC is not available
+  -> RIO BuildConfig WantedCompiler
+withDebugsetupEnv needTargets boptsCLI mResolveMissingGHC = do
+  wcVersion <- view wantedCompilerVersionL
+  logInfo $ displayShow $ parseMyVersion wcVersion
+  return wcVersion
+  
 -- | A modified env which we know has an installed compiler on the PATH.
 data WithGHC env = WithGHC !CompilerPaths !env
 

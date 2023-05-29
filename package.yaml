@@ -36,12 +36,6 @@ extra-source-files:
 - stack.yaml
 - doc/*.md
 - src/setup-shim/StackSetupShim.hs
-- test/package-dump/ghc-7.10.txt
-- test/package-dump/ghc-7.8.4-osx.txt
-- test/package-dump/ghc-7.8.txt
-- test/package-dump/ghc-head.txt
-- src/test/Stack/Untar/test1.tar.gz
-- src/test/Stack/Untar/test2.tar.gz
 # GHC's GHC2021 language extension is supported by GHC >= 9.2.1
 language: GHC2021
 ghc-options:
@@ -210,6 +204,7 @@ library:
   - Stack.Hoogle
   - Stack.IDE
   - Stack.Init
+  - Stack.InitGhc
   - Stack.List
   - Stack.Ls
   - Stack.Lock
@@ -359,47 +354,6 @@ executables:
       cpp-options: -DHIDE_DEP_VERSIONS
     - condition: flag(supported-build)
       cpp-options: -DSUPPORTED_BUILD
-  stack-integration-test:
-    main: IntegrationSpec.hs
-    source-dirs:
-    - test/integration
-    - test/integration/lib
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - filepath
-    - hspec
-    - optparse-generic
-    when:
-    - condition: ! '!(flag(integration-tests))'
-      buildable: false
-    - condition: flag(static)
-      ld-options:
-      - -static
-      - -pthread
-tests:
-  stack-test:
-    main: Spec.hs
-    source-dirs: src/test
-    when:
-    - condition: 'os(windows)'
-      then:
-        source-dirs: src/test/windows/
-      else:
-        source-dirs: src/test/unix/
-    ghc-options:
-    - -threaded
-    dependencies:
-    - QuickCheck
-    - hspec
-    - raw-strings-qq
-    - stack
-    - smallcheck
-    verbatim: |
-      build-tool-depends:
-          hspec-discover:hspec-discover
 flags:
   static:
     description: Pass -static/-pthread to ghc when linking the stack binary.

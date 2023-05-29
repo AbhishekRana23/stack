@@ -1,4 +1,0 @@
-name: example
-library:
-  dependencies:
-  - base
